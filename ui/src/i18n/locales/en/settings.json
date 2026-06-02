@@ -390,6 +390,10 @@
       "description": "Run tool calls without asking for confirmation. This maps to bypassPermissions and should only be used in trusted workspaces.",
       "warning": "Permission prompts are currently bypassed. Allowed and blocked rules below are still saved, but this global mode lets the agent run without asking."
     },
+    "selfHealContinue": {
+      "title": "Self-heal continuation",
+      "description": "When the assistant produces no real text output (e.g. empty response, tool-call-only turn), automatically send \"继续\" to unblock the session. Prevents silent stalls caused by model API failures."
+    },
     "allowedTools": {
       "title": "Allowed Tools",
       "description": "Tools that are automatically allowed without prompting for permission",

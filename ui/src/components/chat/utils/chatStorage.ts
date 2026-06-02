@@ -72,6 +72,10 @@ export function getPilotDeckSettings(): PilotDeckSettings {
           ? parsed.skipPermissions
           : false,
       projectSortOrder: parsed.projectSortOrder || 'name',
+      selfHealContinue:
+        typeof parsed.selfHealContinue === 'boolean'
+          ? parsed.selfHealContinue
+          : false,
     };
   } catch {
     return {
@@ -79,6 +83,7 @@ export function getPilotDeckSettings(): PilotDeckSettings {
       disallowedTools: [],
       skipPermissions: false,
       projectSortOrder: 'name',
+      selfHealContinue: false,
     };
   }
 }
@@ -122,5 +127,6 @@ function mergePermissionSettings(value: unknown): PilotDeckSettings {
     disallowedTools: Array.isArray(parsed.disallowedTools) ? parsed.disallowedTools : [],
     skipPermissions: Boolean(parsed.skipPermissions),
     projectSortOrder: current.projectSortOrder || 'name',
+    selfHealContinue: typeof parsed.selfHealContinue === 'boolean' ? parsed.selfHealContinue : current.selfHealContinue,
   };
 }

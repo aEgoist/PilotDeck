@@ -142,6 +142,7 @@ export interface PilotDeckSettings {
   disallowedTools: string[];
   skipPermissions: boolean;
   projectSortOrder: string;
+  selfHealContinue?: boolean;
   lastUpdated?: string;
   [key: string]: unknown;
 }

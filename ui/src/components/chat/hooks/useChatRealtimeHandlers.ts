@@ -5,6 +5,8 @@ import type { Project, ProjectSession, SessionProvider } from '../../../types/ap
 import type { SessionStore, NormalizedMessage } from '../../../stores/useSessionStore';
 import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { SmoothTextStream } from './streamSmoother';
+import { getPilotDeckSettings } from '../utils/chatStorage';
+import { startSessionCommand } from '../utils/sessionLauncher';
 
 type PendingViewSession = {
   sessionId: string | null;
@@ -120,6 +122,7 @@ interface UseChatRealtimeHandlersArgs {
   onNavigateToSession?: (sessionId: string) => void;
   onWebSocketReconnect?: () => void;
   sessionStore: SessionStore;
+  sendMessage: (message: unknown) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -128,6 +131,7 @@ interface UseChatRealtimeHandlersArgs {
 
 export function useChatRealtimeHandlers({
   provider,
+  selectedProject,
   selectedSession,
   currentSessionId,
   setCurrentSessionId,
@@ -146,11 +150,13 @@ export function useChatRealtimeHandlers({
   onNavigateToSession,
   onWebSocketReconnect,
   sessionStore,
+  sendMessage,
 }: UseChatRealtimeHandlersArgs) {
   const { subscribe } = useWebSocket();
 
   const streamBySessionRef = useRef<StreamSmootherMap>(new Map());
   const thinkingBySessionRef = useRef<StreamSmootherMap>(new Map());
+  const lastSelfHealAtRef = useRef<number>(0);
 
   const handleMessage = useCallback((latestMessage: LatestChatMessage, fallbackSessionId?: string | null) => {
     if (!latestMessage) return;
@@ -428,6 +434,35 @@ export function useChatRealtimeHandlers({
             setTimeout(() => window.refreshProjects?.(), 500);
           }
         }
+
+        // Self-heal: if the assistant produced no real text output, send "继续"
+        if (sid && !msg.aborted) {
+          try {
+            const now = Date.now();
+            const cooledDown = now - lastSelfHealAtRef.current >= 10_000;
+            if (cooledDown) {
+              const settings = getPilotDeckSettings();
+              if (settings.selfHealContinue && selectedProject) {
+                const allMsgs = sessionStore.getMessages(sid);
+                const lastAssistant = [...allMsgs]
+                  .reverse()
+                  .find((m) => m.kind === 'text' && m.role === 'assistant');
+                const content = lastAssistant?.content?.trim() ?? '';
+                if (content.length < 20) {
+                  lastSelfHealAtRef.current = now;
+                  startSessionCommand({
+                    sendMessage,
+                    selectedProject,
+                    command: '继续',
+                    sessionId: sid,
+                  });
+                }
+              }
+            }
+          } catch {
+            // self-heal must never break the normal flow
+          }
+        }
         break;
       }
 
@@ -537,6 +572,8 @@ export function useChatRealtimeHandlers({
     onNavigateToSession,
     onWebSocketReconnect,
     sessionStore,
+    selectedProject,
+    sendMessage,
   ]);
 
   useEffect(() => {

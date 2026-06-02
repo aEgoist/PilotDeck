@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Download, Plus, Shield, Upload, X } from 'lucide-react';
+import { AlertTriangle, Download, Plus, RefreshCw, Shield, Upload, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button, Input } from '../../../../shared/view/ui';
 import { isImeEnterEvent } from '../../../../utils/ime';
@@ -173,6 +173,7 @@ export default function PermissionsSettingsTab() {
   const [allowedTools, setAllowedTools] = useState<string[]>([]);
   const [disallowedTools, setDisallowedTools] = useState<string[]>([]);
   const [skipPermissions, setSkipPermissions] = useState(false);
+  const [selfHealContinue, setSelfHealContinue] = useState(false);
   const [newAllowed, setNewAllowed] = useState('');
   const [newBlocked, setNewBlocked] = useState('');
   const [banner, setBanner] = useState<StatusBanner>(null);
@@ -183,6 +184,7 @@ export default function PermissionsSettingsTab() {
     setAllowedTools(settings.allowedTools);
     setDisallowedTools(settings.disallowedTools);
     setSkipPermissions(settings.skipPermissions);
+    setSelfHealContinue(settings.selfHealContinue || false);
   }, []);
 
   useEffect(() => {
@@ -193,6 +195,7 @@ export default function PermissionsSettingsTab() {
         setAllowedTools(settings.allowedTools);
         setDisallowedTools(settings.disallowedTools);
         setSkipPermissions(settings.skipPermissions);
+        setSelfHealContinue(settings.selfHealContinue || false);
       })
       .catch((error) => {
         console.error('Failed to load permission settings from backend:', error);
@@ -442,6 +445,27 @@ export default function PermissionsSettingsTab() {
               })}
             </div>
           ) : null}
+          <SettingsRow
+            label={
+              <span className="inline-flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                {t('permissions.selfHealContinue.title', { defaultValue: 'Self-heal continuation' })}
+              </span>
+            }
+            description={t('permissions.selfHealContinue.description', {
+              defaultValue:
+                'When the assistant produces no real text output (e.g. empty response, tool-call-only turn), automatically send "继续" to unblock the session. Prevents silent stalls caused by model API failures.',
+            })}
+          >
+            <SettingsToggle
+              checked={selfHealContinue}
+              ariaLabel={t('permissions.selfHealContinue.title', { defaultValue: 'Self-heal continuation' })}
+              onChange={(value: boolean) => {
+                setSelfHealContinue(value);
+                persist({ selfHealContinue: value });
+              }}
+            />
+          </SettingsRow>
         </SettingsCard>
       </SettingsSection>
 
