@@ -7,6 +7,7 @@ import { useWebSocket } from '../../../contexts/WebSocketContext';
 import { SmoothTextStream } from './streamSmoother';
 import { getPilotDeckSettings } from '../utils/chatStorage';
 import { startSessionCommand } from '../utils/sessionLauncher';
+import { getAutoProceed } from '../utils/autoProceedStorage';
 
 type PendingViewSession = {
   sessionId: string | null;
@@ -461,6 +462,31 @@ export function useChatRealtimeHandlers({
             }
           } catch {
             // self-heal must never break the normal flow
+          }
+
+          // Auto-proceed: if active for this session, re-check and push forward
+          if (getAutoProceed(sid)) {
+            try {
+              const settings = getPilotDeckSettings();
+              const allMsgs = sessionStore.getMessages(sid);
+              const lastAssistant = [...allMsgs]
+                .reverse()
+                .find((m) => m.kind === 'text' && m.role === 'assistant');
+              const content = lastAssistant?.content?.trim() ?? '';
+              if (!content.includes('无需自动推进') && content.length >= 20) {
+                const prompt =
+                  settings.autoProceedPrompt ||
+                  '你处于自动推进模式，再次自行审查代码是否符合项目规范、是否已完整满足我的需求、是否已足够简洁清晰、无过度设计或冗余保护。如果你认为已达最终交付状态，请明确答复"无需自动推进"';
+                startSessionCommand({
+                  sendMessage,
+                  selectedProject,
+                  command: prompt,
+                  sessionId: sid,
+                });
+              }
+            } catch {
+              // auto-proceed must never break the normal flow
+            }
           }
         }
         break;

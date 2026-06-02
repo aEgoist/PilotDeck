@@ -33,6 +33,7 @@ import {
   useCustomNamesVersion,
 } from '../../lib/customNames';
 import pilotdeckLogoDark from '../../assets/pilotdeck-wordmark-dark.png';
+import { getAutoProceed, toggleAutoProceed } from '../chat/utils/autoProceedStorage';
 import pilotdeckLogoLight from '../../assets/pilotdeck-wordmark-light.png';
 
 const asTimestamp = (value: unknown): number => {
@@ -155,9 +156,13 @@ const SPINNER_DOTS = Array.from({ length: 8 }, (_, index) => index);
 function SessionStatusIndicator({
   status,
   label,
+  autoProceedActive = false,
+  onToggleAutoProceed,
 }: {
   status: SessionIndicatorStatus;
   label: string;
+  autoProceedActive?: boolean;
+  onToggleAutoProceed?: () => void;
 }) {
   if (status === 'processing') {
     return (
@@ -180,15 +185,30 @@ function SessionStatusIndicator({
     );
   }
 
+  const dotColor =
+    status === 'unread'
+      ? 'bg-blue-500 dark:bg-blue-400'
+      : autoProceedActive
+        ? 'bg-emerald-600 dark:bg-emerald-500'
+        : 'bg-neutral-300 dark:bg-neutral-600';
+
+  const toggleLabel = autoProceedActive
+    ? 'Auto-proceed on — click to disable'
+    : 'Auto-proceed off — click to enable';
+
   return (
-    <span
-      aria-label={label}
-      title={label}
+    <button
+      type="button"
+      aria-label={toggleLabel}
+      title={toggleLabel}
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggleAutoProceed?.();
+      }}
       className={cn(
         'block h-1.5 w-1.5 rounded-full',
-        status === 'unread'
-          ? 'bg-blue-500 dark:bg-blue-400'
-          : 'bg-neutral-300 dark:bg-neutral-600',
+        'ring-offset-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        dotColor,
       )}
     />
   );
@@ -277,6 +297,7 @@ export default function SidebarV2({
   const [contextMenu, setContextMenu] = useState<SidebarContextMenu | null>(null);
   const [collapsedSessionProjects, setCollapsedSessionProjects] = useState<Set<string>>(new Set());
   const [draftSessionProjectName, setDraftSessionProjectName] = useState<string | null>(null);
+  const [autoProceedVersion, setAutoProceedVersion] = useState<number>(0);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
 
   // Segmented toggle between the Projects list and the General workspace.
@@ -767,6 +788,11 @@ export default function SidebarV2({
                       <SessionStatusIndicator
                         status={indicatorStatus}
                         label={indicatorLabel}
+                        autoProceedActive={getAutoProceed(sessionId)}
+                        onToggleAutoProceed={() => {
+                          toggleAutoProceed(sessionId);
+                          setAutoProceedVersion((v) => v + 1);
+                        }}
                       />
                     </span>
                     <div className="min-w-0 flex-1">
