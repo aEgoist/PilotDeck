@@ -189,7 +189,7 @@ function SessionStatusIndicator({
     status === 'unread'
       ? 'bg-blue-500 dark:bg-blue-400'
       : autoProceedActive
-        ? 'bg-emerald-600 dark:bg-emerald-500'
+        ? 'bg-emerald-700 dark:bg-emerald-600'
         : 'bg-neutral-300 dark:bg-neutral-600';
 
   const toggleLabel = autoProceedActive
@@ -197,17 +197,25 @@ function SessionStatusIndicator({
     : 'Auto-proceed off — click to enable';
 
   return (
-    <button
-      type="button"
+    <span
+      role="button"
+      tabIndex={0}
       aria-label={toggleLabel}
       title={toggleLabel}
       onClick={(event) => {
         event.stopPropagation();
         onToggleAutoProceed?.();
       }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.stopPropagation();
+          event.preventDefault();
+          onToggleAutoProceed?.();
+        }
+      }}
       className={cn(
-        'block h-1.5 w-1.5 rounded-full',
-        'ring-offset-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'block h-1.5 w-1.5 shrink-0 rounded-full',
+        'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
         dotColor,
       )}
     />

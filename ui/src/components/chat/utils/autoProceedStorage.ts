@@ -27,11 +27,7 @@ export function getAutoProceed(sessionId: string): boolean {
 export function setAutoProceed(sessionId: string, active: boolean): void {
   if (!sessionId) return;
   try {
-    if (active) {
-      window.localStorage.setItem(AUTO_PROCEED_PREFIX + sessionId, '1');
-    } else {
-      window.localStorage.removeItem(AUTO_PROCEED_PREFIX + sessionId);
-    }
+    window.localStorage.setItem(AUTO_PROCEED_PREFIX + sessionId, active ? '1' : '0');
   } catch {
     // ignore storage errors
   }
